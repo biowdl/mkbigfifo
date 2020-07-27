@@ -22,9 +22,9 @@
 
 import argparse
 import fcntl
+import logging
 import os
 from pathlib import Path
-from typing import Optional
 
 F_SET_PIPE_SZ = 1031
 F_GET_PIPE_SZ = 1032
@@ -45,16 +45,28 @@ def argument_parser() -> argparse.ArgumentParser:
 class BigFIFO:
     def __init__(self, path: str, pipe_size: int = MAX_PIPE_SIZE):
         self.path = path
-        self.pipe_size = pipe_size
-        self.fd: Optional[int] = None
 
-    def __enter__(self):
+        if pipe_size % 4096 != 0:
+            logging.warning(f"{pipe_size} is not a multiple of 4096. "
+                            f"It will be rounded up automatically to "
+                            f"{(pipe_size // 4096 + 1) * 4096}.")
+        if pipe_size > MAX_PIPE_SIZE:
+            # Raise a ValueError here. Otherwise fcntl will raise a
+            # non-descriptive permission error.
+            raise ValueError(
+                f"{pipe_size} is bigger than maximum of {MAX_PIPE_SIZE}")
+
         os.mkfifo(self.path)
         self.fd = os.open(self.path, os.O_RDWR | os.O_APPEND)
-        fcntl.fcntl(self.fd, F_SET_PIPE_SZ, self.pipe_size)
+        fcntl.fcntl(self.fd, F_SET_PIPE_SZ, pipe_size)
+
+    def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
+    def close(self):
         os.close(self.fd)
         os.remove(self.path)
 
