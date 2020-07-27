@@ -28,7 +28,7 @@ import os
 import signal
 import time
 from pathlib import Path
-from typing import List
+from typing import Iterable
 
 F_SET_PIPE_SZ = 1031
 F_GET_PIPE_SZ = 1032
@@ -82,14 +82,34 @@ class BigFIFO:
         return fcntl.fcntl(self.fd, F_GET_PIPE_SZ)
 
 
-def create_fifo_files_daemon(paths: List[str],
+class SignalCatcher():
+    """
+    Catch a signal and store a signal number. Useful for usage in while loops.
+    https://stackoverflow.com/a/31464349
+    """
+    def __init__(self, signals: Iterable[int]):
+        self.catched = False
+        self.received_signal = None
+        for sign in signals:
+            signal.signal(sign, self._handle_signal)
+
+    def _handle_signal(self, signum, frame):
+        self.received_signal = signum
+        self.catched = True
+
+
+def create_fifo_files_daemon(paths: Iterable[str],
                              size: int = MAX_PIPE_SIZE):
     with contextlib.ExitStack() as stack:
         for path in paths:
             stack.enter_context(BigFIFO(path, size))
-
         # Wait for the program to be terminated by control-C or SIGTERM.
-        signal.sigwait((signal.SIGTERM, signal.SIGINT))
+        signal_catcher = SignalCatcher((signal.SIGTERM, signal.SIGINT))
+        while not signal_catcher.catched:
+            # 0.1 is perceived as near instant. (1.0 is too slow.)
+            time.sleep(0.1)
+        logging.info(f"Closing fifo files {paths} after receiving signal "
+                     f"{signal_catcher.received_signal}")
 
 
 def main():
