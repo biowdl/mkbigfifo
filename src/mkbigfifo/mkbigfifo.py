@@ -37,14 +37,17 @@ MAX_PIPE_SIZE = int(Path("/proc/sys/fs/pipe-max-size").read_text())
 
 def argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
-    parser.add_argument("FIFO", nargs="+", help="FIFO files to create")
+    parser.add_argument("FIFO", nargs="+",
+                        help="One or multiple named pipes to create.")
     parser.add_argument("-s", "--size", default=MAX_PIPE_SIZE,
                         help=f"Size in bytes for the fifo files. Default is "
                              f"the maximum user-allowed pipe size on the "
                              f"system. On this system that is "
                              f"{MAX_PIPE_SIZE} bytes.")
-    parser.add_argument("-v", "--verbose", action="count", default=0)
-    parser.add_argument("-q", "--quiet", action="count", default=0)
+    parser.add_argument("-v", "--verbose", action="count", default=0,
+                        help="Increase verbosity. Multiple flags allowed.")
+    parser.add_argument("-q", "--quiet", action="count", default=0,
+                        help="Decrease verbosity. Multiple flags allowed.")
     return parser
 
 
