@@ -21,10 +21,13 @@
 # SOFTWARE.
 
 import argparse
+import contextlib
 import fcntl
 import logging
 import os
+import signal
 from pathlib import Path
+from typing import List
 
 F_SET_PIPE_SZ = 1031
 F_GET_PIPE_SZ = 1032
@@ -34,7 +37,7 @@ MAX_PIPE_SIZE = int(Path("/proc/sys/fs/pipe-max-size").read_text())
 def argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument("FIFO", nargs="+", help="FIFO files to create")
-    parser.add_argument("-s", "--size",
+    parser.add_argument("-s", "--size", default=MAX_PIPE_SIZE,
                         help=f"Size in bytes for the fifo files. Default is "
                              f"the maximum user-allowed pipe size on the "
                              f"system. On this system that is "
@@ -73,3 +76,23 @@ class BigFIFO:
     def size(self):
         """Returns the size of the pipe"""
         return fcntl.fcntl(self.fd, F_GET_PIPE_SZ)
+
+
+def create_fifo_files_daemon(paths: List[str],
+                             size: int = MAX_PIPE_SIZE):
+    with contextlib.ExitStack() as stack:
+        for path in paths:
+            stack.enter_context(BigFIFO(path, size))
+
+        # Wait for the program to be terminated by control-C or SIGTERM.
+        signal.sigwait((signal.SIGTERM, signal.SIGINT))
+
+
+def main():
+    args = argument_parser().parse_args()
+    create_fifo_files_daemon(args.FIFO, args.size)
+    pass
+
+
+if __name__ == "__main__":  # pragma: no cover
+    main()
