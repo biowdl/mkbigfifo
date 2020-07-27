@@ -18,9 +18,19 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from .mkbigfifo import BigFIFO, MAX_PIPE_SIZE
+import os
+from mkbigfifo import BigFIFO, MAX_PIPE_SIZE
 
-__all__ = [
-    "BigFIFO",
-    "MAX_PIPE_SIZE",
-]
+
+def test_mkbigfifo_default():
+    with BigFIFO("mypipe") as mypipe:
+        assert mypipe.size() == MAX_PIPE_SIZE
+    assert not os.path.exists(mypipe.path)
+
+
+def test_mkbigfifo_value():
+    with BigFIFO("mypipe", 4096) as mypipe:
+        assert mypipe.size() == 4096
+    assert not os.path.exists(mypipe.path)
+
+
