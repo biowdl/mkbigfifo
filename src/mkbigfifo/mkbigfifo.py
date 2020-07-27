@@ -26,6 +26,7 @@ import fcntl
 import logging
 import os
 import signal
+import time
 from pathlib import Path
 from typing import List
 
@@ -42,6 +43,8 @@ def argument_parser() -> argparse.ArgumentParser:
                              f"the maximum user-allowed pipe size on the "
                              f"system. On this system that is "
                              f"{MAX_PIPE_SIZE} bytes.")
+    parser.add_argument("-v", "--verbose", action="count", default=0)
+    parser.add_argument("-q", "--quiet", action="count", default=0)
     return parser
 
 
@@ -59,6 +62,7 @@ class BigFIFO:
             raise ValueError(
                 f"{pipe_size} is bigger than maximum of {MAX_PIPE_SIZE}")
 
+        logging.info(f"Create '{self.path}' with size {pipe_size}")
         os.mkfifo(self.path)
         self.fd = os.open(self.path, os.O_RDWR | os.O_APPEND)
         fcntl.fcntl(self.fd, F_SET_PIPE_SZ, pipe_size)
@@ -90,8 +94,11 @@ def create_fifo_files_daemon(paths: List[str],
 
 def main():
     args = argument_parser().parse_args()
+    logger = logging.getLogger()
+    # The lower the level the more verbose.
+    logger.setLevel(logging.WARNING + (args.quiet - args.verbose) * 10)
+
     create_fifo_files_daemon(args.FIFO, args.size)
-    pass
 
 
 if __name__ == "__main__":  # pragma: no cover
