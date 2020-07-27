@@ -108,8 +108,8 @@ def create_fifo_files_daemon(paths: Iterable[str],
         while not signal_catcher.catched:
             # 0.1 is perceived as near instant. (1.0 is too slow.)
             time.sleep(0.1)
-        logging.info(f"Closing fifo files {paths} after receiving signal "
-                     f"{signal_catcher.received_signal}")
+        logging.debug(f"Closing fifo files {paths} after receiving signal "
+                      f"{signal_catcher.received_signal}")
 
 
 def main():
