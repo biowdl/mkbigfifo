@@ -61,7 +61,9 @@ def test_bigfifo_too_big():
 def test_program(sign):
     args = ("mkbigfifo", "-s", "4096", "pipe1", "pipe2", "-vvvvv")
     mkbigfifo_process = subprocess.Popen(args)
-    time.sleep(0.3)  # Sleep a bit to allow creating files.
+    # Sleep a bit to allow creating files. 0.3 is a bit long, but needed on
+    # travis CI.
+    time.sleep(0.3)
     assert Path("pipe1").exists()
     assert Path("pipe2").exists()
     assert get_fifo_size("pipe1") == 4096
