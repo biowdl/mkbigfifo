@@ -18,7 +18,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from .mkbigfifo import *
+from .mkbigfifo import (BigFIFO, MAX_PIPE_SIZE, get_fifo_size, get_pipe_size,
+                        main)
 
 __all__ = [
     "BigFIFO",

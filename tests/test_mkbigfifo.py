@@ -19,14 +19,12 @@
 # SOFTWARE.
 
 import os
-import subprocess
 import signal
-import sys
-import multiprocessing
+import subprocess
 import time
 from pathlib import Path
 
-from mkbigfifo import BigFIFO, MAX_PIPE_SIZE, get_fifo_size, main
+from mkbigfifo import BigFIFO, MAX_PIPE_SIZE, get_fifo_size
 
 import pytest
 
