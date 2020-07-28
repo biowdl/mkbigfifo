@@ -1,7 +1,7 @@
 # mkbigfifo
 
 mkbigfifo is a program that supplements mkfifo by allowing to create named
-pipes that have a bigger buffer size.
+pipes that have by default the maximum allowed buffer size.
 
 ## Introduction
 `mkfifo` creates named pipes on the operating system. These pipes default 
@@ -58,6 +58,7 @@ https://unix.stackexchange.com/a/439438)
 but these require the use of `fcntl` kernel calls. A working example in python
 can be found [here](
 https://www.golinuxhub.com/2018/05/how-to-view-and-increase-default-pipe-size-buffer/).
+Mkbigfifo was made to provide an easy interface to these solutions.
 
 ## Acknowledgements
 
