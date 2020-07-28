@@ -16,6 +16,18 @@ this will block program_a at the moment the pipe buffer is full. By using a
 bigger pipe buffer these moments where the pipe buffer is full will occur less 
 frequently.
 
+## Why not mkfifo?
+Unfortunately mkfifo can NOT be used to set the size in advance. The size is 
+determined by the kernel and can only set by a program that has opened the 
+fifo.
+
+[Solutions have been presented on stackoverflow](
+https://unix.stackexchange.com/a/439438)
+but these require the use of `fcntl` kernel calls. A working example in python
+can be found [here](
+https://www.golinuxhub.com/2018/05/how-to-view-and-increase-default-pipe-size-buffer/).
+Mkbigfifo was made to provide an easy interface to these solutions.
+
 ## Usage
 Since pipe size can only be modified by *running* programs `mkbigfifo` must
 run until all the  programs using the named pipes are finished.
@@ -49,17 +61,6 @@ optional arguments:
   -v, --verbose         Increase verbosity. Multiple flags allowed.
   -q, --quiet           Decrease verbosity. Multiple flags allowed.
 ```
-## Why not mkfifo?
-Unfortunately mkfifo can NOT be used to set the size in advance. The size is 
-determined by the kernel and can only set by a program that has opened the 
-fifo.
-
-[Solutions have been presented on stackoverflow](
-https://unix.stackexchange.com/a/439438)
-but these require the use of `fcntl` kernel calls. A working example in python
-can be found [here](
-https://www.golinuxhub.com/2018/05/how-to-view-and-increase-default-pipe-size-buffer/).
-Mkbigfifo was made to provide an easy interface to these solutions.
 
 ## Acknowledgements
 
