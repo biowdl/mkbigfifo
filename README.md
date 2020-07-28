@@ -1,7 +1,8 @@
 # mkbigfifo
 
 mkbigfifo is a program that supplements mkfifo by allowing to create named
-pipes that have by default the maximum allowed buffer size.
+pipes that have by default the maximum allowed buffer size (typically 
+increasing the size from 64 KiB to 1 MiB). 
 
 ## Introduction
 `mkfifo` creates named pipes on the operating system. These pipes default 
