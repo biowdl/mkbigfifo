@@ -58,7 +58,7 @@ def get_pipe_size(fd: int):
 
 
 def get_fifo_size(path: str):
-    fd = os.open(path, os.O_RDWR | os.O_APPEND)
+    fd = os.open(path, os.O_RDONLY)
     return get_pipe_size(fd)
 
 
@@ -78,7 +78,7 @@ class BigFIFO:
 
         logging.info(f"Create '{self.path}' with size {pipe_size}")
         os.mkfifo(self.path)
-        self.fd = os.open(self.path, os.O_RDWR | os.O_APPEND)
+        self.fd = os.open(self.path, os.O_RDWR)
         fcntl.fcntl(self.fd, F_SET_PIPE_SZ, pipe_size)
 
     def __enter__(self):
