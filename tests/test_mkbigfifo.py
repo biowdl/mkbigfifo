@@ -74,20 +74,3 @@ def test_program(sign):
     assert not Path("pipe1").exists()
     assert not Path("pipe2").exists()
     assert exit_code == 0
-
-
-def test_main():
-    sys.argv = ["mkbigfifo", "-s", "4096", "pipe1", "pipe2", "-vvvvv"]
-    mkbigfifo_process = multiprocessing.Process(target=main)
-    mkbigfifo_process.start()
-    time.sleep(0.1)  # Sleep a bit to allow creating files.
-    assert Path("pipe1").exists()
-    assert Path("pipe2").exists()
-    assert get_fifo_size("pipe1") == 4096
-    assert get_fifo_size("pipe2") == 4096
-    mkbigfifo_process.terminate()
-    mkbigfifo_process.join()
-    exit_code = mkbigfifo_process.exitcode
-    assert not Path("pipe1").exists()
-    assert not Path("pipe2").exists()
-    assert exit_code == 0
