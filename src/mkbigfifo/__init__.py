@@ -24,6 +24,7 @@ from .mkbigfifo import (BigFIFO, MAX_PIPE_SIZE, PAGE_SIZE, get_fifo_size,
 __all__ = [
     "BigFIFO",
     "MAX_PIPE_SIZE",
+    "PAGE_SIZE",
     "get_fifo_size",
     "get_pipe_size",
     "main"
