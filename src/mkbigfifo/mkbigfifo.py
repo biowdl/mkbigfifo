@@ -32,6 +32,8 @@ from typing import Iterable
 
 F_SET_PIPE_SZ = 1031
 F_GET_PIPE_SZ = 1032
+
+PAGE_SIZE = os.sysconf("SC_PAGESIZE")
 MAX_PIPE_SIZE = int(Path("/proc/sys/fs/pipe-max-size").read_text())
 
 
@@ -64,10 +66,10 @@ class BigFIFO:
     def __init__(self, path: str, pipe_size: int = MAX_PIPE_SIZE):
         self.path = path
 
-        if pipe_size % 4096 != 0:
-            logging.warning(f"{pipe_size} is not a multiple of 4096. "
-                            f"It will be rounded up automatically to "
-                            f"{(pipe_size // 4096 + 1) * 4096}.")
+        if pipe_size % PAGE_SIZE != 0:
+            logging.warning(f"{pipe_size} is not a multiple of the page size: "
+                            f"{PAGE_SIZE}. It will be rounded up automatically"
+                            f" to {(pipe_size // PAGE_SIZE + 1) * PAGE_SIZE}.")
         if pipe_size > MAX_PIPE_SIZE:
             # Raise a ValueError here. Otherwise fcntl will raise a
             # non-descriptive permission error.

@@ -24,7 +24,7 @@ import subprocess
 import time
 from pathlib import Path
 
-from mkbigfifo import BigFIFO, MAX_PIPE_SIZE, get_fifo_size
+from mkbigfifo import BigFIFO, MAX_PIPE_SIZE, PAGE_SIZE, get_fifo_size
 
 import pytest
 
@@ -44,11 +44,13 @@ def test_mkbigfifo_value():
 
 
 def test_mkbigfifo_warning(caplog):
-    with BigFIFO("mypipe", 128) as mypipe:
-        assert mypipe.size() == 4096
+    value = 128
+    with BigFIFO("mypipe", value) as mypipe:
+        assert mypipe.size() == PAGE_SIZE
     assert not os.path.exists(mypipe.path)
-    assert caplog.messages[0] == ("128 is not a multiple of 4096. It will be "
-                                  "rounded up automatically to 4096.")
+    assert caplog.messages[0] == (f"{value} is not a multiple of the page "
+                                  f"size: {PAGE_SIZE}. It will be rounded up "
+                                  f"automatically to {PAGE_SIZE}.")
 
 
 def test_bigfifo_too_big():
