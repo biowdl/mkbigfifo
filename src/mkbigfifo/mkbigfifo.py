@@ -39,7 +39,7 @@ def argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument("FIFO", nargs="+",
                         help="One or multiple named pipes to create.")
-    parser.add_argument("-s", "--size", default=MAX_PIPE_SIZE,
+    parser.add_argument("-s", "--size", type=int, default=MAX_PIPE_SIZE,
                         help=f"Size in bytes for the fifo files. Default is "
                              f"the maximum user-allowed pipe size on the "
                              f"system. On this system that is "
@@ -49,6 +49,15 @@ def argument_parser() -> argparse.ArgumentParser:
     parser.add_argument("-q", "--quiet", action="count", default=0,
                         help="Decrease verbosity. Multiple flags allowed.")
     return parser
+
+
+def get_pipe_size(fd: int):
+    return fcntl.fcntl(fd, F_GET_PIPE_SZ)
+
+
+def get_fifo_size(path: str):
+    fd = os.open(path, os.O_RDWR | os.O_APPEND)
+    return get_pipe_size(fd)
 
 
 class BigFIFO:
@@ -82,7 +91,7 @@ class BigFIFO:
 
     def size(self):
         """Returns the size of the pipe"""
-        return fcntl.fcntl(self.fd, F_GET_PIPE_SZ)
+        return get_pipe_size(self.fd)
 
 
 class SignalCatcher():

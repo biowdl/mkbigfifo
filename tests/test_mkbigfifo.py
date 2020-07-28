@@ -19,8 +19,14 @@
 # SOFTWARE.
 
 import os
+import subprocess
+import signal
+import sys
+import multiprocessing
+import time
+from pathlib import Path
 
-from mkbigfifo import BigFIFO, MAX_PIPE_SIZE
+from mkbigfifo import BigFIFO, MAX_PIPE_SIZE, get_fifo_size, main
 
 import pytest
 
@@ -51,3 +57,37 @@ def test_bigfifo_too_big():
     with pytest.raises(ValueError) as error:
         BigFIFO("mypipe", MAX_PIPE_SIZE + 1)
     error.match("is bigger than maximum")
+
+
+@pytest.mark.parametrize("sign", [signal.SIGINT, signal.SIGTERM])
+def test_program(sign):
+    args = ("mkbigfifo", "-s", "4096", "pipe1", "pipe2", "-vvvvv")
+    mkbigfifo_process = subprocess.Popen(args)
+    time.sleep(0.1)  # Sleep a bit to allow creating files.
+    assert Path("pipe1").exists()
+    assert Path("pipe2").exists()
+    assert get_fifo_size("pipe1") == 4096
+    assert get_fifo_size("pipe2") == 4096
+    mkbigfifo_process.send_signal(sign)
+    mkbigfifo_process.wait()
+    exit_code = mkbigfifo_process.poll()
+    assert not Path("pipe1").exists()
+    assert not Path("pipe2").exists()
+    assert exit_code == 0
+
+
+def test_main():
+    sys.argv = ["mkbigfifo", "-s", "4096", "pipe1", "pipe2", "-vvvvv"]
+    mkbigfifo_process = multiprocessing.Process(target=main)
+    mkbigfifo_process.start()
+    time.sleep(0.1)  # Sleep a bit to allow creating files.
+    assert Path("pipe1").exists()
+    assert Path("pipe2").exists()
+    assert get_fifo_size("pipe1") == 4096
+    assert get_fifo_size("pipe2") == 4096
+    mkbigfifo_process.terminate()
+    mkbigfifo_process.join()
+    exit_code = mkbigfifo_process.exitcode
+    assert not Path("pipe1").exists()
+    assert not Path("pipe2").exists()
+    assert exit_code == 0
