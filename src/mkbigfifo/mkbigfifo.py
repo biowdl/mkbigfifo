@@ -25,7 +25,9 @@ import contextlib
 import fcntl
 import logging
 import os
+import queue
 import signal
+import threading
 import time
 from pathlib import Path
 from typing import Iterable
@@ -91,6 +93,16 @@ class BigFIFO:
         os.close(self.fd)
         os.remove(self.path)
 
+    def wait(self, interval: int = 1, delta_ns: int = 1 * 10 ** 9):
+        """Waits until the pipe is not used anymore."""
+        signal_catcher = SignalCatcher((signal.SIGTERM, signal.SIGINT))
+        while not signal_catcher.catched:
+            if time.time_ns() - os.fstat(self.fd).st_atime_ns > delta_ns:
+                return
+            time.sleep(interval)
+        logging.debug(f"Closing fifo file {self.path} after receiving signal "
+                      f"{signal_catcher.received_signal}")
+
     def size(self):
         """Returns the size of the pipe"""
         return get_pipe_size(self.fd)
@@ -115,15 +127,13 @@ class SignalCatcher():
 def create_fifo_files_daemon(paths: Iterable[str],
                              size: int = MAX_PIPE_SIZE):
     with contextlib.ExitStack() as stack:
-        for path in paths:
-            stack.enter_context(BigFIFO(path, size))
-        # Wait for the program to be terminated by control-C or SIGTERM.
-        signal_catcher = SignalCatcher((signal.SIGTERM, signal.SIGINT))
-        while not signal_catcher.catched:
-            # 0.1 is perceived as near instant. (1.0 is too slow.)
-            time.sleep(0.1)
-        logging.debug(f"Closing fifo files {paths} after receiving signal "
-                      f"{signal_catcher.received_signal}")
+        fifos = [stack.enter_context(BigFIFO(path, size)) for path in paths]
+        threads = [threading.Thread(target=fifo.wait()) for fifo in fifos]
+        time.sleep(15)
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
 
 
 def main():
