@@ -25,8 +25,8 @@ import contextlib
 import fcntl
 import logging
 import os
-import queue
 import signal
+import stat
 import threading
 import time
 from pathlib import Path
@@ -60,8 +60,12 @@ def get_pipe_size(fd: int):
 
 
 def get_fifo_size(path: str):
-    fd = os.open(path, os.O_RDONLY)
-    return get_pipe_size(fd)
+    fd = os.open(path, os.O_RDWR)
+    try:
+        size = get_pipe_size(fd)
+    finally:
+        os.close(fd)
+    return size
 
 
 class BigFIFO:
@@ -77,9 +81,13 @@ class BigFIFO:
             # non-descriptive permission error.
             raise ValueError(
                 f"{pipe_size} is bigger than maximum of {MAX_PIPE_SIZE}")
-
-        logging.info(f"Create '{self.path}' with size {pipe_size}")
-        os.mkfifo(self.path)
+        if os.path.exists(self.path):
+            if not stat.S_ISFIFO(os.stat(self.path).st_mode):
+                raise FileExistsError(self.path)
+            logging.info(f"Modify '{self.path}' with size {pipe_size}")
+        else:
+            logging.info(f"Create '{self.path}' with size {pipe_size}")
+            os.mkfifo(self.path)
         self.fd = os.open(self.path, os.O_RDWR)
         fcntl.fcntl(self.fd, F_SET_PIPE_SZ, pipe_size)
 
@@ -91,17 +99,17 @@ class BigFIFO:
 
     def close(self):
         os.close(self.fd)
-        os.remove(self.path)
 
-    def wait(self, interval: int = 1, delta_ns: int = 1 * 10 ** 9):
+    def wait(self, delta: int = 1, interval: int = 1,):
         """Waits until the pipe is not used anymore."""
-        signal_catcher = SignalCatcher((signal.SIGTERM, signal.SIGINT))
-        while not signal_catcher.catched:
-            if time.time_ns() - os.stat(self.path).st_atime_ns > delta_ns:
+        while True:
+            time_difference = time.time_ns() - os.stat(self.path).st_atime_ns
+            time_difference_secs = time_difference / 10**9
+            logging.debug(f"Time difference: {time_difference_secs}")
+            logging.debug(f"Pipe size: {get_pipe_size(self.fd)}")
+            if time_difference_secs > delta:
                 return
             time.sleep(interval)
-        logging.debug(f"Closing fifo file {self.path} after receiving signal "
-                      f"{signal_catcher.received_signal}")
 
     def size(self):
         """Returns the size of the pipe"""
@@ -128,7 +136,7 @@ def create_fifo_files_daemon(paths: Iterable[str],
                              size: int = MAX_PIPE_SIZE):
     with contextlib.ExitStack() as stack:
         fifos = [stack.enter_context(BigFIFO(path, size)) for path in paths]
-        threads = [threading.Thread(target=fifo.wait()) for fifo in fifos]
+        threads = [threading.Thread(target=fifo.wait) for fifo in fifos]
         time.sleep(15)
         for thread in threads:
             thread.start()
