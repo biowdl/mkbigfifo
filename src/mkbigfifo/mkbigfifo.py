@@ -106,7 +106,6 @@ class BigFIFO:
             time_difference = time.time_ns() - os.stat(self.path).st_atime_ns
             time_difference_secs = time_difference / 10**9
             logging.debug(f"Time difference: {time_difference_secs}")
-            logging.debug(f"Pipe size: {get_pipe_size(self.fd)}")
             if time_difference_secs > delta:
                 return
             time.sleep(interval)
