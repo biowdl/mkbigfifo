@@ -99,8 +99,11 @@ class BigFIFO:
 
     def close(self):
         os.close(self.fd)
+        logging.info(
+            f"Releasing '{self.path}'. Pipesize back to "
+            f"{get_fifo_size(self.path)}.")
 
-    def wait(self, delta: int = 1, interval: int = 1,):
+    def wait(self, delta: int = 1, interval: int = 1):
         """Waits until the pipe is not used anymore."""
         while True:
             time_difference = time.time_ns() - os.stat(self.path).st_atime_ns
