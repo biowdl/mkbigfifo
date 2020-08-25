@@ -97,7 +97,7 @@ class BigFIFO:
         """Waits until the pipe is not used anymore."""
         signal_catcher = SignalCatcher((signal.SIGTERM, signal.SIGINT))
         while not signal_catcher.catched:
-            if time.time_ns() - os.fstat(self.fd).st_atime_ns > delta_ns:
+            if time.time_ns() - os.stat(self.path).st_atime_ns > delta_ns:
                 return
             time.sleep(interval)
         logging.debug(f"Closing fifo file {self.path} after receiving signal "
